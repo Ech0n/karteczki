@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Karteczki</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+    <h1>Karteczki</h1>
+
+    <h2>Karteczki</h2>
+    <ul id="playerList"></ul>
+
+    <script>
+        const SUPABASE_URL = '';
+        const SUPABASE_KEY = '';
+        // const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function loadPlayers() {
+                const { data, error } = await supabase.from('karteczki').select('*');
+                const list = document.getElementById('playerList');
+                list.innerHTML = '';
+
+                data.forEach(player => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                    <strong>${player.name}</strong><br>
+                    🟡 Yellow: ${player.yellow_cards} <button data-id="${player.id}" data-type="yellow">+</button>
+                    🟢 Green: ${player.green_cards} <button data-id="${player.id}" data-type="green">+</button>
+                    🔴 Red: ${player.red_cards} <button data-id="${player.id}" data-type="red">+</button>
+                `;
+                    list.appendChild(li);
+                });
+
+                // Add event listeners to the "+" buttons
+                document.querySelectorAll('button[data-id]').forEach(button => {
+                    button.addEventListener('click', async () => {
+                        const id = button.getAttribute('data-id');
+                        const type = button.getAttribute('data-type');
+                        await incrementCardCount(id, type);
+                        loadPlayers(); // refresh UI
+                    });
+                });
+            }
+
+            async function incrementCardCount(id, type) {
+                // Get the current record
+                const { data, error } = await supabase
+                    .from('karteczki')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+
+                if (error || !data) return console.error('Failed to fetch player', error);
+
+                const updated = {
+                    yellow_cards: data.yellow_cards,
+                    green_cards: data.green_cards,
+                    red_cards: data.red_cards
+                };
+
+                updated[`${type}_cards`] += 1;
+
+                await supabase
+                    .from('karteczki')
+                    .update(updated)
+                    .eq('id', id);
+            }
+
+            loadPlayers();
+    </script>
+</body>
+
+</html>
