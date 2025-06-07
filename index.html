@@ -1,76 +1,150 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
+    <meta charset="UTF-8">
     <title>Karteczki</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="secret.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f8;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            text-align: center;
+            padding: 20px;
+            color: #333;
+        }
+
+        #playerList {
+            list-style: none;
+            padding: 0;
+            max-width: 800px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        li {
+            background-color: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        li strong {
+            font-size: 1.2em;
+            color: #222;
+        }
+
+        .card-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        button {
+            border: none;
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 1em;
+            cursor: pointer;
+            color: white;
+            transition: background-color 0.3s ease;
+        }
+
+        button[data-type="yellow"] {
+            background-color: #f1c40f;
+        }
+
+        button[data-type="yellow"]:hover {
+            background-color: #d4ac0d;
+        }
+
+        button[data-type="green"] {
+            background-color: #2ecc71;
+        }
+
+        button[data-type="green"]:hover {
+            background-color: #27ae60;
+        }
+
+        button[data-type="red"] {
+            background-color: #e74c3c;
+        }
+
+        button[data-type="red"]:hover {
+            background-color: #c0392b;
+        }
+    </style>
 </head>
 
 <body>
     <h1>Karteczki</h1>
-
-    <h2>Karteczki</h2>
     <ul id="playerList"></ul>
 
     <script>
-        const SUPABASE_URL = SECRET.API_URL;
-        const SUPABASE_KEY = SECRET.API_KEY;
-        // const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const SUPABASE_URL = 'https://craxqjxixhzwrzqrnvju.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNyYXhxanhpeGh6d3J6cXJudmp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkzMzA2ODgsImV4cCI6MjA2NDkwNjY4OH0.wFbarwUJowhT93Rcf6MfbrrAQjHXF8GjxYzNak-pmMo';
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         async function loadPlayers() {
-                const { data, error } = await supabase.from('karteczki').select('*');
-                const list = document.getElementById('playerList');
-                list.innerHTML = '';
+            const { data, error } = await supabase.from('karteczki').select('*');
+            const list = document.getElementById('playerList');
+            list.innerHTML = '';
 
-                data.forEach(player => {
-                    const li = document.createElement('li');
-                    li.innerHTML = `
-                    <strong>${player.name}</strong><br>
-                    🟡 Yellow: ${player.yellow_cards} <button data-id="${player.id}" data-type="yellow">+</button>
-                    🟢 Green: ${player.green_cards} <button data-id="${player.id}" data-type="green">+</button>
-                    🔴 Red: ${player.red_cards} <button data-id="${player.id}" data-type="red">+</button>
+            data.forEach(player => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <strong>${player.name}</strong>
+                    <div class="card-row">🟡 Yellow: ${player.yellow_cards} <button data-id="${player.id}" data-type="yellow">+</button></div>
+                    <div class="card-row">🟢 Green: ${player.green_cards} <button data-id="${player.id}" data-type="green">+</button></div>
+                    <div class="card-row">🔴 Red: ${player.red_cards} <button data-id="${player.id}" data-type="red">+</button></div>
                 `;
-                    list.appendChild(li);
+                list.appendChild(li);
+            });
+
+            document.querySelectorAll('button[data-id]').forEach(button => {
+                button.addEventListener('click', async () => {
+                    const id = button.getAttribute('data-id');
+                    const type = button.getAttribute('data-type');
+                    await incrementCardCount(id, type);
+                    loadPlayers(); // Refresh
                 });
+            });
+        }
 
-                // Add event listeners to the "+" buttons
-                document.querySelectorAll('button[data-id]').forEach(button => {
-                    button.addEventListener('click', async () => {
-                        const id = button.getAttribute('data-id');
-                        const type = button.getAttribute('data-type');
-                        await incrementCardCount(id, type);
-                        loadPlayers(); // refresh UI
-                    });
-                });
-            }
+        async function incrementCardCount(id, type) {
+            const { data, error } = await supabase
+                .from('karteczki')
+                .select('*')
+                .eq('id', id)
+                .single();
 
-            async function incrementCardCount(id, type) {
-                // Get the current record
-                const { data, error } = await supabase
-                    .from('karteczki')
-                    .select('*')
-                    .eq('id', id)
-                    .single();
+            if (error || !data) return console.error('Failed to fetch player', error);
 
-                if (error || !data) return console.error('Failed to fetch player', error);
+            const updated = {
+                yellow_cards: data.yellow_cards,
+                green_cards: data.green_cards,
+                red_cards: data.red_cards
+            };
 
-                const updated = {
-                    yellow_cards: data.yellow_cards,
-                    green_cards: data.green_cards,
-                    red_cards: data.red_cards
-                };
+            updated[`${type}_cards`] += 1;
 
-                updated[`${type}_cards`] += 1;
+            await supabase
+                .from('karteczki')
+                .update(updated)
+                .eq('id', id);
+        }
 
-                await supabase
-                    .from('karteczki')
-                    .update(updated)
-                    .eq('id', id);
-            }
-
-            loadPlayers();
+        loadPlayers();
     </script>
 </body>
 
