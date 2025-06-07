@@ -87,14 +87,43 @@
 </head>
 
 <body>
-    <h1>Karteczki</h1>
-    <ul id="playerList"></ul>
 
+    <h1>Karteczki</h1>
+    <h2>Sign In</h2>
+    <form id="signin-form">
+        <label>Email: <input type="email" id="email" required /></label><br />
+        <label>Password: <input type="password" id="password" required /></label><br />
+        <button type="submit">Sign In</button>
+    </form>
+    <h2>Karteczki</h2>
+    <ul id="playerList"></ul>
+    <div id="message">
+    </div>
     <script>
         const SUPABASE_URL = 'https://craxqjxixhzwrzqrnvju.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNyYXhxanhpeGh6d3J6cXJudmp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkzMzA2ODgsImV4cCI6MjA2NDkwNjY4OH0.wFbarwUJowhT93Rcf6MfbrrAQjHXF8GjxYzNak-pmMo';
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const form = document.getElementById('signin-form');
+            const messageDiv = document.getElementById('message');
 
+            form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            // Call Supabase auth sign in
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+            if (error) {
+                messageDiv.textContent = 'Error: ' + error.message;
+                messageDiv.style.color = 'red';
+            } else {
+                messageDiv.textContent = 'Signed in successfully! Welcome, ' + data.user.email;
+                messageDiv.style.color = 'green';
+                // You can redirect or load user-specific content here
+            }
+            });
         async function loadPlayers() {
             const { data, error } = await supabase.from('karteczki').select('*');
             const list = document.getElementById('playerList');
