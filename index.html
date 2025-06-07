@@ -182,7 +182,6 @@
       });
 
       data.forEach((player, index) => {
-        const total = player.yellow_cards + player.green_cards + player.red_cards;
         const row = document.createElement('tr');
         row.innerHTML = `
           <td>${index + 1}</td>
@@ -190,7 +189,6 @@
           <td>${player.yellow_cards}</td>
           <td>${player.green_cards}</td>
           <td>${player.red_cards}</td>
-          <td>${total}</td>
           <td>
             <button class="action-button yellow" data-id="${player.id}" data-type="yellow">+🟡</button>
             <button class="action-button green" data-id="${player.id}" data-type="green">+🟢</button>
