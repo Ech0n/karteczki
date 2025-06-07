@@ -4,6 +4,7 @@
 <head>
     <title>Karteczki</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="secret.js"></script>
 </head>
 
 <body>
@@ -13,8 +14,8 @@
     <ul id="playerList"></ul>
 
     <script>
-        const SUPABASE_URL = '';
-        const SUPABASE_KEY = '';
+        const SUPABASE_URL = SECRET.API_URL;
+        const SUPABASE_KEY = SECRET.API_KEY;
         // const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
