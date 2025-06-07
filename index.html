@@ -128,7 +128,13 @@
             const { data, error } = await supabase.from('karteczki').select('*');
             const list = document.getElementById('playerList');
             list.innerHTML = '';
-            data.sort((a, b) => a.name.localeCompare(b.name));
+            data.sort((a, b) => {
+                if(a.red_cards == b.red_cards){
+                    return a.yellow_cards < b.yellow_cards
+                }
+                return a.red_cards < b.red_cards;
+            }
+            );
 
             data.forEach(player => {
                 const li = document.createElement('li');
