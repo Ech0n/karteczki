@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Karteczki Leaderboard</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="secret.js"></script>
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -144,9 +144,10 @@
   </table>
 
   <script>
-    const SUPABASE_URL = 'https://craxqjxixhzwrzqrnvju.supabase.co';
-    const SUPABASE_KEY = 'YOUR_SUPABASE_KEY'; // Replace if needed
+    const SUPABASE_URL = SECRET.API_URL;
+    const SUPABASE_KEY = SECRET.API_KEY;
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            
 
     const form = document.getElementById('signin-form');
     const messageDiv = document.getElementById('message');
