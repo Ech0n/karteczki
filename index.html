@@ -45,30 +45,30 @@
       cursor: pointer;
     }
 
-    #playerList {
+    .TABELKA {
       margin: 0 auto;
       width: 90%;
       max-width: 1000px;
       border-collapse: collapse;
     }
 
-    #playerList th,
-    #playerList td {
+    .TABELKA th,
+    .TABELKA td {
       padding: 12px;
       text-align: center;
       border-bottom: 1px solid #ddd;
     }
 
-    #playerList th {
+    .TABELKA th {
       background-color: #2c3e50;
       color: white;
     }
 
-    #playerList tr:nth-child(even) {
+    .TABELKA tr:nth-child(even) {
       background-color: #f9f9f9;
     }
 
-    #playerList tr:hover {
+    .TABELKA tr:hover {
       background-color: #f1f1f1;
     }
 
@@ -125,16 +125,15 @@
 
   <div id="message"></div>
 
-  <h2>Leaderboard</h2>
-  <table id="playerList">
+  <marquee><h1>Leaderboard</h1></marquee>
+  <table  class="TABELKA" id="playerList">
     <thead>
       <tr>
         <th>#</th>
         <th>Name</th>
         <th>🟡 Yellow</th>
-        <th>🟢 Green</th>
+        <!-- <th>🟢 Green</th> -->
         <th>🔴 Red</th>
-        <th>Total</th>
         <th>Actions</th>
       </tr>
     </thead>
@@ -142,7 +141,19 @@
       <!-- Filled dynamically -->
     </tbody>
   </table>
-
+  <h2>VAR</h2>
+  <table border="1" class="TABELKA" id="requests-table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Recipient</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Requests will be injected here -->
+    </tbody>
+  </table>
   <script>
     const SUPABASE_URL = SECRET.API_URL;
     const SUPABASE_KEY = SECRET.API_KEY;
@@ -176,8 +187,8 @@
       if (error || !data) return;
 
       data.sort((a, b) => {
-        const aTotal = a.red_cards * 100 + a.yellow_cards * 10 + a.green_cards;
-        const bTotal = b.red_cards * 100 + b.yellow_cards * 10 + b.green_cards;
+        const aTotal = a.red_cards * 100 + a.cards * 10 + a.green_cards;
+        const bTotal = b.red_cards * 100 + b.cards * 10 + b.green_cards;
         return bTotal - aTotal;
       });
 
@@ -187,12 +198,9 @@
           <td>${index + 1}</td>
           <td><strong>${player.name}</strong></td>
           <td>${player.yellow_cards}</td>
-          <td>${player.green_cards}</td>
           <td>${player.red_cards}</td>
           <td>
             <button class="action-button yellow" data-id="${player.id}" data-type="yellow">+🟡</button>
-            <button class="action-button green" data-id="${player.id}" data-type="green">+🟢</button>
-            <button class="action-button red" data-id="${player.id}" data-type="red">+🔴</button>
           </td>
         `;
         tbody.appendChild(row);
@@ -212,21 +220,69 @@
       const { data, error } = await supabase.from('karteczki').select('*').eq('id', id).single();
       if (error || !data) return;
 
-      const updated = {
-        yellow_cards: data.yellow_cards,
-        green_cards: data.green_cards,
-        red_cards: data.red_cards
+
+      const request = {
+        card_type: "yellow",
+        recipent_name: data.name,
+        recipent_id: id,
       };
-
-      updated[`${type}_cards`] += 1;
-
-      await supabase.from('karteczki').update(updated).eq('id', id);
+      console.log(request)
+      await supabase.from('requests').insert([request]);
+      loadRequests()
+      // await supabase.from('karteczki').update(updated).eq('id', id);
     }
 
     // Optional: auto-load if already signed in
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) loadPlayers();
     });
+
+    async function loadRequests() {
+        const { data, error } = await supabase.from('requests').select('*');
+        if (error) {
+          console.error('Failed to load requests:', error);
+          return;
+        }
+
+        const tableBody = document.querySelector('#requests-table tbody');
+        tableBody.innerHTML = ''; // Clear existing rows
+
+        data.forEach((request) => {
+          const row = document.createElement('tr');
+
+          row.innerHTML = `
+          <td>${request.id}</td>
+          <td>${request.recipent_name}</td>
+          <td>
+            <button data-id="${request.recipent_id}" onclick="addConfirmation(${request.recipent_id}, ${request.id}, true)">Accept</button>
+            <button data-id="${request.recipent_id}" onclick="addConfirmation(${request.recipent_id}, ${request.id}, false)">Deny</button>
+          </td>
+        `;
+
+          tableBody.appendChild(row);
+        });
+      }
+
+      // Insert confirmation when a button is clicked
+      async function addConfirmation(recipent_id,request_id ,isAccepting) {
+        const payload ={
+          request_related_user_id: recipent_id,
+          request_id: request_id,
+          is_accepting: isAccepting
+          // user_id is filled automatically by trigger or auth.uid() policy
+        }
+        const { error } = await supabase.from('confirmations').insert([payload]);
+        console.log("sent confirmation request: ",payload)
+        if (error) {
+          alert('Error inserting confirmation: ' + error.message);
+        } else {
+          alert(`Response recorded: ${isAccepting ? 'Accepted' : 'Denied'}`);
+          loadRequests(); // Refresh list after action
+        }
+      }
+
+      // Load on page load
+      loadRequests();
   </script>
 </body>
 
